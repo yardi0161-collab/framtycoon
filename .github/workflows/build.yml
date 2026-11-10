@@ -5,53 +5,23 @@ on:
     branches: [ main ]
   workflow_dispatch:
 
-permissions:
-  contents: read
-
 jobs:
   build:
-    name: Compile Paper 1.21.8 plugin
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout source
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Set up Java 21
-        uses: actions/setup-java@v4
+      - uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '21'
           cache: maven
 
-      - name: Verify Java and Maven
-        run: |
-          java -version
-          mvn -version
+      - name: Build
+        run: mvn --batch-mode clean package
 
-      - name: Locate project and build
-        shell: bash
-        run: |
-          if [[ -f pom.xml ]]; then
-            PROJECT_DIR="."
-          elif [[ -f FarmTycoon-source.zip ]]; then
-            mkdir -p _farmtycoon_source
-            unzip -q FarmTycoon-source.zip -d _farmtycoon_source
-            PROJECT_DIR="_farmtycoon_source/FarmTycoon"
-          else
-            echo "ERROR: pom.xml atau FarmTycoon-source.zip tidak ditemukan di root repository."
-            exit 1
-          fi
-          if [[ ! -f "$PROJECT_DIR/pom.xml" ]]; then
-            echo "ERROR: pom.xml tidak ditemukan di $PROJECT_DIR. Periksa struktur source ZIP."
-            exit 1
-          fi
-          echo "PROJECT_DIR=$PROJECT_DIR" >> "$GITHUB_ENV"
-          mvn --batch-mode --no-transfer-progress -f "$PROJECT_DIR/pom.xml" clean package
-
-      - name: Upload plugin JAR
-        uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v4
         with:
           name: FarmTycoon-JAR
-          path: ${{ env.PROJECT_DIR }}/target/FarmTycoon.jar
+          path: target/FarmTycoon.jar
           if-no-files-found: error
-          retention-days: 30
